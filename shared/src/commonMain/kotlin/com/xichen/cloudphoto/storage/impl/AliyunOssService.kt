@@ -2,13 +2,13 @@ package com.xichen.cloudphoto.storage.impl
 
 import com.xichen.cloudphoto.model.StorageConfig
 import com.xichen.cloudphoto.storage.StorageService
+import com.xichen.cloudphoto.util.TimeUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.xichen.cloudphoto.util.Base64Encoder
 import kotlin.text.Charsets.UTF_8
 
 class AliyunOssService(private val httpClient: HttpClient) : StorageService {
@@ -20,11 +20,10 @@ class AliyunOssService(private val httpClient: HttpClient) : StorageService {
         mimeType: String
     ): Result<String> = withContext(Dispatchers.Default) {
         try {
-            val objectKey = "photos/${System.currentTimeMillis()}_$fileName"
+            val objectKey = "photos/${TimeUtils.currentTimeMillis()}_$fileName"
             val url = "${config.endpoint}/${config.bucketName}/$objectKey"
             
-            val date = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
-                .format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+            val date = TimeUtils.formatRfc1123()
             
             val signature = generateSignature(
                 "PUT",
@@ -64,8 +63,7 @@ class AliyunOssService(private val httpClient: HttpClient) : StorageService {
             val objectKey = photoUrl.substringAfter("${config.endpoint}/${config.bucketName}/")
             val url = "${config.endpoint}/${config.bucketName}/$objectKey"
             
-            val date = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
-                .format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+            val date = TimeUtils.formatRfc1123()
             
             val signature = generateSignature(
                 "DELETE",
@@ -125,8 +123,7 @@ class AliyunOssService(private val httpClient: HttpClient) : StorageService {
                 }
             }
             
-            val date = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
-                .format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+            val date = TimeUtils.formatRfc1123()
             
             val signature = generateSignature(
                 "GET",

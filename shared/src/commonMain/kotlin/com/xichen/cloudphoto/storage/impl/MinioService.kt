@@ -2,6 +2,7 @@ package com.xichen.cloudphoto.storage.impl
 
 import com.xichen.cloudphoto.model.StorageConfig
 import com.xichen.cloudphoto.storage.StorageService
+import com.xichen.cloudphoto.util.TimeUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.*
@@ -18,7 +19,7 @@ class MinioService(private val httpClient: HttpClient) : StorageService {
         mimeType: String
     ): Result<String> = withContext(Dispatchers.Default) {
         try {
-            val objectKey = "photos/${System.currentTimeMillis()}_$fileName"
+            val objectKey = "photos/${TimeUtils.currentTimeMillis()}_$fileName"
             val endpoint = config.endpoint.removeSuffix("/")
             val url = "$endpoint/${config.bucketName}/$objectKey"
             

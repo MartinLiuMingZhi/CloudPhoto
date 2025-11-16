@@ -3,6 +3,7 @@ package com.xichen.cloudphoto.service
 import com.xichen.cloudphoto.model.Album
 import com.xichen.cloudphoto.repository.AlbumRepository
 import com.xichen.cloudphoto.repository.PhotoRepository
+import com.xichen.cloudphoto.util.TimeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
@@ -43,7 +44,7 @@ class AlbumService(
     }
     
     private fun generateId(): String {
-        return "${System.currentTimeMillis()}_${(0..999999).random()}"
+        return "${TimeUtils.currentTimeMillis()}_${(0..999999).random()}"
     }
 }
 

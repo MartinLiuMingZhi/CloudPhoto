@@ -1,15 +1,12 @@
 package com.xichen.cloudphoto.storage
 
-import com.xichen.cloudphoto.model.Photo
 import com.xichen.cloudphoto.model.StorageConfig
+import com.xichen.cloudphoto.storage.impl.AliyunOssService
+import com.xichen.cloudphoto.storage.impl.AwsS3Service
+import com.xichen.cloudphoto.storage.impl.CustomS3Service
+import com.xichen.cloudphoto.storage.impl.MinioService
+import com.xichen.cloudphoto.storage.impl.TencentCosService
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.io.IOException
 
 interface StorageService {
     suspend fun uploadPhoto(
@@ -39,11 +36,16 @@ interface StorageService {
 object StorageServiceFactory {
     fun create(provider: com.xichen.cloudphoto.model.StorageProvider, httpClient: HttpClient): StorageService {
         return when (provider) {
-            com.xichen.cloudphoto.model.StorageProvider.ALIYUN_OSS -> AliyunOssService(httpClient)
-            com.xichen.cloudphoto.model.StorageProvider.AWS_S3 -> AwsS3Service(httpClient)
-            com.xichen.cloudphoto.model.StorageProvider.TENCENT_COS -> TencentCosService(httpClient)
-            com.xichen.cloudphoto.model.StorageProvider.MINIO -> MinioService(httpClient)
-            com.xichen.cloudphoto.model.StorageProvider.CUSTOM_S3 -> CustomS3Service(httpClient)
+            com.xichen.cloudphoto.model.StorageProvider.ALIYUN_OSS ->
+                AliyunOssService(httpClient)
+            com.xichen.cloudphoto.model.StorageProvider.AWS_S3 ->
+                AwsS3Service(httpClient)
+            com.xichen.cloudphoto.model.StorageProvider.TENCENT_COS ->
+                TencentCosService(httpClient)
+            com.xichen.cloudphoto.model.StorageProvider.MINIO ->
+                MinioService(httpClient)
+            com.xichen.cloudphoto.model.StorageProvider.CUSTOM_S3 ->
+                CustomS3Service(httpClient)
         }
     }
 }

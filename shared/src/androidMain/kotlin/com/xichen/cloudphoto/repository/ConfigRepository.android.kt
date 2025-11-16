@@ -54,7 +54,7 @@ actual class ConfigRepository {
     }
     
     actual suspend fun deleteConfig(id: String) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.remove("config_$id")?.apply()
+        prefs?.edit()?.remove("config_$id")?.apply() ?: Unit
     }
     
     actual suspend fun getDefaultConfig(): StorageConfig? = withContext(Dispatchers.IO) {

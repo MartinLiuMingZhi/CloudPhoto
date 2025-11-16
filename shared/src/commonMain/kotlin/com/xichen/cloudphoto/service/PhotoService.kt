@@ -6,11 +6,11 @@ import com.xichen.cloudphoto.repository.ConfigRepository
 import com.xichen.cloudphoto.repository.PhotoRepository
 import com.xichen.cloudphoto.storage.StorageService
 import com.xichen.cloudphoto.storage.StorageServiceFactory
+import com.xichen.cloudphoto.util.TimeUtils
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.io.IOException
 
 class PhotoService(
     private val photoRepository: PhotoRepository,
@@ -120,7 +120,7 @@ class PhotoService(
     }
     
     private fun generateId(): String {
-        return "${System.currentTimeMillis()}_${(0..999999).random()}"
+        return "${TimeUtils.currentTimeMillis()}_${(0..999999).random()}"
     }
 }
 

@@ -22,6 +22,15 @@ kotlin {
             implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
             implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
             implementation("androidx.core:core-ktx:1.17.0")
+            
+            // Ktor for Android
+            implementation("io.ktor:ktor-client-android:2.3.12")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
+            implementation("io.ktor:ktor-client-logging:2.3.12")
+            
+            // Material Icons Extended
+            implementation("androidx.compose.material:material-icons-extended:1.7.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -33,6 +42,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+            
+            // DateTime
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
