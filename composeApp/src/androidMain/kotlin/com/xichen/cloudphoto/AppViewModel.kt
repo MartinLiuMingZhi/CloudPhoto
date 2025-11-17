@@ -5,46 +5,32 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xichen.cloudphoto.model.Photo
 import com.xichen.cloudphoto.model.StorageConfig
-import com.xichen.cloudphoto.repository.AlbumRepository
-import com.xichen.cloudphoto.repository.ConfigRepository
-import com.xichen.cloudphoto.repository.PhotoRepository
+import com.xichen.cloudphoto.core.di.AppContainerHolder
+import com.xichen.cloudphoto.core.error.ErrorHandler
+import com.xichen.cloudphoto.core.logger.Log
 import com.xichen.cloudphoto.service.AlbumService
 import com.xichen.cloudphoto.service.ConfigService
 import com.xichen.cloudphoto.service.PhotoService
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
-    private val configRepository = ConfigRepository().apply {
-        init(application)
-    }
-    private val photoRepository = PhotoRepository().apply {
-        init(application)
-    }
-    private val albumRepository = AlbumRepository().apply {
-        init(application)
+    // 使用依赖注入容器
+    private val container = AppContainerHolder.getContainer()
+    
+    // 初始化 Repositories
+    init {
+        container.configRepository.init(application)
+        container.photoRepository.init(application)
+        container.albumRepository.init(application)
     }
     
-    private val httpClient = HttpClient {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
-        install(Logging) {
-            level = LogLevel.INFO
-        }
-    }
-    
-    private val configService = ConfigService(configRepository)
-    private val photoService = PhotoService(photoRepository, configRepository, httpClient)
-    private val albumService = AlbumService(albumRepository, photoRepository)
+    // 从容器获取服务
+    private val configService: ConfigService = container.configService
+    private val photoService: PhotoService = container.photoService
+    private val albumService: AlbumService = container.albumService
     
     private val _photos = MutableStateFlow<List<Photo>>(emptyList())
     val photos: StateFlow<List<Photo>> = _photos.asStateFlow()
@@ -83,7 +69,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 height = height
             )
             result.onSuccess {
+                Log.i("AppViewModel", "Photo uploaded successfully: ${it.id}")
                 loadPhotos()
+            }.onFailure { error ->
+                val appError = ErrorHandler.handleError(error)
+                Log.e("AppViewModel", "Failed to upload photo: ${appError.message}", error)
             }
         }
     }
@@ -91,7 +81,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun deletePhoto(photoId: String) {
         viewModelScope.launch {
             photoService.deletePhoto(photoId).onSuccess {
+                Log.i("AppViewModel", "Photo deleted successfully: $photoId")
                 loadPhotos()
+            }.onFailure { error ->
+                val appError = ErrorHandler.handleError(error)
+                Log.e("AppViewModel", "Failed to delete photo: ${appError.message}", error)
             }
         }
     }
@@ -119,7 +113,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     
     override fun onCleared() {
         super.onCleared()
-        httpClient.close()
+        // 容器会在应用退出时统一清理
     }
 }
 

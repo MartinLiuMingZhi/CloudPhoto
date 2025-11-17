@@ -33,6 +33,7 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
             implementation("io.ktor:ktor-client-logging:2.3.12")
+            // HttpTimeout 插件已包含在 ktor-client-core 中，无需单独依赖
             
             // Coroutines
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
@@ -42,6 +43,8 @@ kotlin {
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-android:2.3.12")
+            // AndroidX Core for ContextCompat
+            implementation("androidx.core:core-ktx:1.17.0")
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:2.3.12")
