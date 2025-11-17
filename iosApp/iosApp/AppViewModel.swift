@@ -71,8 +71,10 @@ class AppViewModel: ObservableObject {
                     configId: nil,
                     albumId: nil
                 )
-                if (try? result.getOrThrow()) != nil {
+                if result.isSuccess {
                     loadPhotos()
+                } else if let error = result.exceptionOrNull() {
+                    print("Error uploading photo: \(error)")
                 }
             } catch {
                 print("Error uploading photo: \(error)")
@@ -84,8 +86,10 @@ class AppViewModel: ObservableObject {
         Task {
             do {
                 let result = try await photoService.deletePhoto(photoId: photoId)
-                if (try? result.getOrThrow()) != nil {
+                if result.isSuccess {
                     loadPhotos()
+                } else if let error = result.exceptionOrNull() {
+                    print("Error deleting photo: \(error)")
                 }
             } catch {
                 print("Error deleting photo: \(error)")
