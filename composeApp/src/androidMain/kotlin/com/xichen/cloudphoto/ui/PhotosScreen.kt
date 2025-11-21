@@ -66,7 +66,8 @@ fun PhotosScreen(viewModel: AppViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("照片") }
+                title = { Text("照片") },
+                windowInsets = WindowInsets.statusBars
             )
         },
         floatingActionButton = {

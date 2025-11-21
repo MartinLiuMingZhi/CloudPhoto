@@ -20,7 +20,7 @@ sealed class Screen(val route: String) {
 }
 
 /**
- * 导航图
+ * 导航图 - 主界面导航（不包含登录界面）
  */
 @Composable
 fun NavGraph(

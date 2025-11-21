@@ -51,11 +51,15 @@ fun CloudPhotoTheme(
         )
     }
     
-    // 设置状态栏颜色
+    // 设置状态栏和导航栏为透明，实现沉浸式边到边布局
     val systemUiController = rememberSystemUiController()
     SideEffect {
         systemUiController.setSystemBarsColor(
-            color = colorScheme.surface,
+            color = Color.Transparent,
+            darkIcons = !isDarkTheme
+        )
+        systemUiController.setNavigationBarColor(
+            color = Color.Transparent,
             darkIcons = !isDarkTheme
         )
     }

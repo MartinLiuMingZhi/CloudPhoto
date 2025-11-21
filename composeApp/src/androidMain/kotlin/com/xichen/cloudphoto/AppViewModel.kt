@@ -11,6 +11,10 @@ import com.xichen.cloudphoto.core.logger.Log
 import com.xichen.cloudphoto.service.AlbumService
 import com.xichen.cloudphoto.service.ConfigService
 import com.xichen.cloudphoto.service.PhotoService
+import com.xichen.cloudphoto.service.AuthService
+import com.xichen.cloudphoto.core.auth.TokenManager
+import com.xichen.cloudphoto.core.network.*
+import com.xichen.cloudphoto.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +36,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val photoService: PhotoService = container.photoService
     private val albumService: AlbumService = container.albumService
     
+    // 认证服务
+    private val authService: AuthService = AuthService(
+        baseUrl = "http://192.168.0.112:8080" // 使用 Wi-Fi 网络的 IP 地址
+    )
+    
+    // Token管理器 - 使用 Context 构造函数
+    private val tokenManager: TokenManager = TokenManager(application.applicationContext)
+    
     private val _photos = MutableStateFlow<List<Photo>>(emptyList())
     val photos: StateFlow<List<Photo>> = _photos.asStateFlow()
     
@@ -41,9 +53,127 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _defaultConfig = MutableStateFlow<StorageConfig?>(null)
     val defaultConfig: StateFlow<StorageConfig?> = _defaultConfig.asStateFlow()
     
+    // 登录状态管理
+    private val _isLoggedIn = MutableStateFlow<Boolean>(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+    
+    // 当前用户信息
+    private val _currentUser = MutableStateFlow<UserDTO?>(null)
+    val currentUser: StateFlow<UserDTO?> = _currentUser.asStateFlow()
+    
+    // 错误消息
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+    
     init {
-        loadPhotos()
-        loadConfigs()
+        // 检查登录状态
+        checkLoginStatus()
+        if (_isLoggedIn.value) {
+            loadPhotos()
+            loadConfigs()
+        }
+    }
+    
+    private fun checkLoginStatus() {
+        _isLoggedIn.value = tokenManager.isLoggedIn()
+    }
+    
+    /**
+     * 发送邮箱验证码
+     */
+    fun sendEmailCode(email: String, type: String = "register") {
+        viewModelScope.launch {
+            _authError.value = null
+            val result = authService.sendEmailCode(email, type)
+            result.onError { exception, message ->
+                _authError.value = message ?: "发送验证码失败"
+                Log.e("AppViewModel", "Failed to send email code: ${message}", exception)
+            }
+        }
+    }
+    
+    /**
+     * 用户登录（支持邮箱或手机号）
+     */
+    fun login(account: String, password: String) {
+        viewModelScope.launch {
+            _authError.value = null
+            val request = LoginRequest(account = account, password = password)
+            val result = authService.login(request)
+            
+            result.onSuccess { response ->
+                // 保存Token
+                tokenManager.saveAccessToken(response.accessToken)
+                tokenManager.saveRefreshToken(response.refreshToken)
+                _currentUser.value = response.user
+                
+                // 先更新登录状态，确保界面能立即响应
+                _isLoggedIn.value = true
+                Log.i("AppViewModel", "Login successful: ${response.user.username}, isLoggedIn set to true")
+                
+                // 保存登录状态到SharedPreferences（兼容旧代码）
+                val prefs = getApplication<Application>().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("is_logged_in", true).apply()
+                
+                loadPhotos()
+                loadConfigs()
+            }.onError { exception, message ->
+                val errorMsg = message ?: exception.message ?: "登录失败"
+                _authError.value = errorMsg
+                Log.e("AppViewModel", "Login failed: $errorMsg", exception)
+                exception.printStackTrace() // 打印完整堆栈信息
+            }
+        }
+    }
+    
+    /**
+     * 用户注册
+     */
+    fun register(username: String, email: String, password: String, emailCode: String, phone: String? = null) {
+        viewModelScope.launch {
+            _authError.value = null
+            val request = RegisterRequest(
+                username = username,
+                email = email,
+                password = password,
+                phone = phone,
+                emailCode = emailCode
+            )
+            val result = authService.register(request)
+            
+            result.onSuccess { user ->
+                _currentUser.value = user
+                // 注册成功后自动登录（使用邮箱作为账号）
+                login(email, password)
+                Log.i("AppViewModel", "Register successful: ${user.username}")
+            }.onError { exception, message ->
+                _authError.value = message ?: "注册失败"
+                Log.e("AppViewModel", "Register failed: ${message}", exception)
+            }
+        }
+    }
+    
+    /**
+     * 用户登出
+     */
+    fun logout() {
+        viewModelScope.launch {
+            val accessToken = tokenManager.getAccessToken()
+            val refreshToken = tokenManager.getRefreshToken()
+            
+            if (accessToken != null) {
+                authService.logout(accessToken, refreshToken)
+            }
+            
+            // 清除Token
+            tokenManager.clearTokens()
+            _isLoggedIn.value = false
+            _currentUser.value = null
+            
+            // 清除登录状态
+            val prefs = getApplication<Application>().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("is_logged_in", false).apply()
+        }
     }
     
     fun loadPhotos() {
